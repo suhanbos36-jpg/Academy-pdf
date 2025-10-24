@@ -1,1 +1,3 @@
-# Academy-pdf
+<script>
+  alert("Website loaded!");
+</script>
