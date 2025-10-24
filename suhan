@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Nexus Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ====== General ====== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
+      overflow: hidden;
+      background: radial-gradient(circle at 20% 20%, #0f172a, #020617 70%);
+      height: 100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* ====== Animated Background ====== */
+    .background {
+      position:absolute;
+      width:200%;
+      height:200%;
+      top:-50%;
+      left:-50%;
+      background: linear-gradient(120deg, #3b82f6, #06b6d4, #8b5cf6, #1e3a8a);
+      background-size:400% 400%;
+      filter: blur(100px);
+      opacity:0.25;
+      animation: gradientMove 12s ease infinite;
+      z-index:0;
+    }
+    @keyframes gradientMove {0% {background-position:0% 50%;} 50% {background-position:100% 50%;} 100% {background-position:0% 50%;}}
+
+    /* ====== Card Container ====== */
+    .container {
+      position:relative;
+      z-index:2;
+      width:90%;
+      max-width:420px;
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:1.5rem;
+      box-shadow:0 0 35px rgba(59,130,246,0.2);
+      padding:3rem 2rem;
+      text-align:center;
+      backdrop-filter: blur(20px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .container:hover {transform: scale(1.02); box-shadow:0 0 45px rgba(59,130,246,0.3);}
+
+    /* ====== Text ====== */
+    .title {font-size:2.5rem; font-weight:700; color:#67e8f9; margin-bottom:0.5rem;}
+    .subtitle {color:#a1a1aa; font-size:0.9rem; margin-bottom:2rem;}
+
+    /* ====== File Input ====== */
+    .file-input {
+      width:100%;
+      padding:0.8rem;
+      border:1px solid rgba(255,255,255,0.2);
+      border-radius:0.8rem;
+      background:transparent;
+      color:#e0f2fe;
+      margin-bottom:1.5rem;
+      transition:border 0.2s ease;
+    }
+    .file-input:hover, .file-input:focus {border-color:#67e8f9; outline:none;}
+
+    /* ====== Button ====== */
+    .btn {
+      width:100%;
+      background: linear-gradient(90deg,#06b6d4,#3b82f6,#8b5cf6);
+      background-size:200%;
+      color:white;
+      padding:0.9rem;
+      border-radius:0.8rem;
+      font-weight:600;
+      border:none;
+      cursor:pointer;
+      box-shadow:0 0 20px rgba(59,130,246,0.4);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: gradientFlow 3s infinite alternate;
+    }
+    .btn:hover {transform: scale(1.05); box-shadow:0 0 30px rgba(59,130,246,0.7);}
+    @keyframes gradientFlow {0%{background-position:0%;}100%{background-position:100%;}}
+
+    /* ====== Link Section ====== */
+    .link-area {margin-top:2rem; word-break: break-all;}
+    .hidden {display:none;}
+    .link {color:#67e8f9; text-decoration:underline; font-size:0.85rem; transition: color 0.2s ease;}
+    .link:hover {color:#3b82f6;}
+
+    /* ====== Footer ====== */
+    .footer {position:absolute; bottom:1rem; font-size:0.75rem; color:#94a3b8; z-index:2;}
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+
+  <main class="container">
+    <h1 class="title">📁 PDF Nexus Pro</h1>
+    <p class="subtitle">Upload • Share • Connect 🌐</p>
+
+    <input id="fileInput" type="file" accept="application/pdf" class="file-input" />
+    <button id="uploadBtn" class="btn">Upload PDF</button>
+
+    <div id="linkArea" class="link-area hidden">
+      <p>🔗 Your Shareable Link:</p>
+      <a id="downloadLink" href="#" target="_blank" class="link"></a>
+    </div>
+  </main>
+
+  <footer class="footer">Made with 💙 by PDF Nexus</footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_APP.firebaseapp.com",
+      projectId: "YOUR_APP",
+      storageBucket: "YOUR_APP.appspot.com",
+      messagingSenderId: "YOUR_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const linkArea = document.getElementById("linkArea");
+    const downloadLink = document.getElementById("downloadLink");
+
+    uploadBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if(!file){ alert("Please choose a PDF first 📄"); return; }
+
+      uploadBtn.disabled = true;
+      uploadBtn.innerText = "Uploading...";
+      uploadBtn.style.opacity = "0.7";
+
+      const storageRef = ref(storage, "pdfs/" + file.name);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      downloadLink.href = url;
+      downloadLink.innerText = url;
+      linkArea.classList.remove("hidden");
+
+      uploadBtn.disabled = false;
+      uploadBtn.innerText = "Upload Another PDF";
+      uploadBtn.style.opacity = "1";
+    });
+  </script>
+</body>
+</html>
